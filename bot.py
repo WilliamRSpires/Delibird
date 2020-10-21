@@ -14,11 +14,12 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='!')
 guild = os.getenv('DISCORD_GUILD')
+google_sheets = os.getenv('Google_Sheets_Key')
 secret_server_id = os.getenv('Secret_Server')
 home_server_id = int(secret_server_id)
 client = discord.Client()
 gc = gspread.service_account(filename='google_sheets_creds.json')
-sh = gc.open_by_key('1tJL4qMFT7Qx7Qzl7yj-NyX1pFhgzHONp60m82ZaT3EQ')
+sh = gc.open_by_key(google_sheets)
 worksheet = sh.sheet1
 
 def is_in_guild(guild_id):
@@ -30,7 +31,6 @@ def is_in_guild(guild_id):
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
-
 
 @bot.command(name='staycool', help='Gives a helpful message')
 @is_in_guild(home_server_id)
@@ -186,7 +186,7 @@ async def Delibird(ctx):
 async def hello(ctx):
     ID=ctx.author.id
     USERID=str(ID)
-    cell = worksheet.find(nickname)
+    cell = worksheet.find('nickname')
     row_cell = worksheet.find(USERID)
     row = row_cell.row
     column = cell.column
