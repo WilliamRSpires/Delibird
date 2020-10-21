@@ -28,6 +28,13 @@ def is_in_guild(guild_id):
     return commands.check(predicate)
 # https://stackoverflow.com/questions/51234778/what-are-the-differences-between-bot-and-client
 
+def find_code(name,platform):
+    row_cell = worksheet.find(name)
+    column_cell = worksheet.find(platform)
+    row = row_cell.row
+    column = column_cell.col
+    return worksheet.cell(row,column).value
+
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
@@ -57,73 +64,38 @@ async def nicknames(ctx):
     await ctx.send(nicknamelist)
 
 @bot.command(name='pogo', help='gives pogo friend codes in a copypaste friendly format')
-async def pogo(ctx, arg1):   
-    nickname = arg1.lower()
-    cell = worksheet.find(nickname)
-    platform_cell = worksheet.find('pogo')
-    row = cell.row
-    column = platform_cell.col
-    friend_code = worksheet.cell(row,column).value
+async def pogo(ctx, arg1):
+    friend_code = find_code(arg1.lower(),'pogo')   
     await ctx.send(friend_code)
 
 @bot.command(name='switch', help='Get your switch codes here')
 async def switch(ctx, arg1):
-    nickname = arg1.lower()
-    cell = worksheet.find(nickname)
-    platform_cell = worksheet.find('switch')
-    row = cell.row
-    column = platform_cell.col
-    switch = worksheet.cell(row,column).value
+    switch = find_code(arg1.lower(),'switch')  
     await ctx.send(switch)
 
 @bot.command(name='xbox', help='Get your Xbox Usernames here')
 async def xbox(ctx, arg1):
-    nickname = arg1.lower()
-    cell = worksheet.find(nickname)
-    platform_cell = worksheet.find('xbox')
-    row = cell.row
-    column = platform_cell.col
-    xbl = worksheet.cell(row,column).value
+    xbl = find_code(arg1.lower(),'xbox')  
     await ctx.send(xbl)
 
-@bot.command(name='Playstation', help='Get your PSN names here')
+@bot.command(name='playstation', help='Get your PSN names here')
 async def playstation(ctx, arg1):
-    nickname = arg1.lower()
-    cell = worksheet.find(nickname)
-    platform_cell = worksheet.find('playstation')
-    row = cell.row
-    column = platform_cell.col
-    PSN = worksheet.cell(row,column).value
+    PSN = find_code(arg1.lower(),'playstation')  
     await ctx.send(PSN)
 
 @bot.command(name='AltOne', help='Get Pogo Alt codes here')
 async def firstAlt(ctx, arg1):
-    nickname = arg1.lower()
-    cell = worksheet.find(nickname)
-    platform_cell = worksheet.find('alt1')
-    row = cell.row
-    column = platform_cell.col
-    friend_code = worksheet.cell(row,column).value
+    friend_code = find_code(arg1.lower(),'alt1') 
     await ctx.send(friend_code)
 
 @bot.command(name='AltTwo', help='Get Secondary Alt codes here')
 async def SecondAlt(ctx, arg1):
-    nickname = arg1.lower()
-    cell = worksheet.find(nickname)
-    platform_cell = worksheet.find('alt2')
-    row = cell.row
-    column = platform_cell.col
-    friend_code = worksheet.cell(row,column).value
+    friend_code = find_code(arg1.lower(),'alt2') 
     await ctx.send(friend_code)
 
 @bot.command(name='AltThree', help='Get your Third Alt Codes here')
 async def ThirdAlt(ctx, arg1):
-    nickname = arg1.lower()
-    cell = worksheet.find(nickname)
-    platform_cell = worksheet.find('alt3')
-    row = cell.row
-    column = platform_cell.col
-    friend_code = worksheet.cell(row,column).value
+    friend_code = find_code(arg1.lower(),'alt3') 
     await ctx.send(friend_code)
 
 @bot.command(name='notsafe', help="reminds people to keept talk appropriate-ish")
