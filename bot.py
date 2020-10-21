@@ -3,6 +3,7 @@ import discord
 import random
 import csv
 import json
+import gspread
 from dotenv import load_dotenv
 import discord.ext.commands
 from discord.ext.commands import bot
@@ -10,13 +11,15 @@ from discord.ext import commands
 from discord.utils import get
 
 load_dotenv()
-
 TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='!')
 guild = os.getenv('DISCORD_GUILD')
 secret_server_id = os.getenv('Secret_Server')
 home_server_id = int(secret_server_id)
 client = discord.Client()
+gc = gspread.service_account(filename='google_sheets_creds.json')
+sh = gc.open_by_key('1tJL4qMFT7Qx7Qzl7yj-NyX1pFhgzHONp60m82ZaT3EQ')
+worksheet = sh.sheet1
 
 def is_in_guild(guild_id):
     async def predicate(ctx):
@@ -28,181 +31,104 @@ def is_in_guild(guild_id):
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
 
+
 @bot.command(name='staycool', help='Gives a helpful message')
 @is_in_guild(home_server_id)
 async def cool(ctx):
     await ctx.send("Take current events talk to #current_events_lounge")
 
+@bot.command(name='newprofile', help="give me a nickname and I'll make you a new profile")
+async def newprofile(ctx,arg1):
+    id_list = worksheet.col_values(1)
+    user_id = ctx.message.author.id
+    id_string = str(user_id)
+    lowercase_user = arg1.lower()
+    if id_string in id_list:
+       message = "You're already in the database. Please try a different command"
+    else:     
+        user = [id_string, arg1, lowercase_user]
+        worksheet.append_row(user)
+        message = "You've been added to the database, thank you {}".format(arg1)
+    await ctx.send(message)
+
 @bot.command(name='nicknames', help='Gives you a list of nicknames')
 async def nicknames(ctx):
-    with open('nickname.json') as f:
-        nicknames = json.load(f)
-    nicknamelist = []
-    for i in nicknames:
-        name = nicknames[i]["Nickname"]
-        nicknamelist.append(name)
+    nicknamelist = worksheet.col_values(2)[1:]
     await ctx.send(nicknamelist)
 
 @bot.command(name='pogo', help='gives pogo friend codes in a copypaste friendly format')
-async def pogo(ctx, arg1):
-    with open('coolerlounge.json') as f:
-        data = json.load(f)
-    with open('nickname.json') as f:
-        nicknames = json.load(f)
-    if arg1 == "all":
-        pogo = ""
-        for i in data:
-                name = data[i]["Nickname"]
-                code = data[i]['Pogo']
-                if code != "":
-                    newentry = name + " : " + code + "\n"
-                    pogo += newentry
-                else:
-                    pass 
-    else: 
-        try:
-            name = nicknames[arg1]
-            USERID=name.get('DiscordID')
-            pogo = data[USERID]['Pogo']
-            if pogo == "":
-                pogo = "The user you chose does not have a friend code in the system"
-        except KeyError:
-            pogo = "This user does not seem to exist or you got the nickname wrong"
-    await ctx.send(pogo)
+async def pogo(ctx, arg1):   
+    nickname = arg1.lower()
+    cell = worksheet.find(nickname)
+    platform_cell = worksheet.find('pogo')
+    row = cell.row
+    column = platform_cell.col
+    friend_code = worksheet.cell(row,column).value
+    await ctx.send(friend_code)
 
 @bot.command(name='switch', help='Get your switch codes here')
 async def switch(ctx, arg1):
-    with open('coolerlounge.json') as f:
-        data = json.load(f)
-    with open('nickname.json') as f:
-        nicknames = json.load(f)
-    if arg1 == "all":
-        switch = ""
-        for i in data:
-                name = data[i]["Nickname"]
-                code = data[i]['Switch']
-                if code != "":
-                    newentry = name + " : " + code + "\n"
-                    switch += newentry
-                else:
-                    pass 
-    else:         
-        try:
-            name = nicknames[arg1]
-            USERID=name.get('DiscordID')
-            switch = data[USERID]['Switch']
-            if switch == "":
-                switch = "The user you chose does not have a friend code in the system"
-        except KeyError:
-            switch = "This user does not seem to exist or you got the nickname wrong"
+    nickname = arg1.lower()
+    cell = worksheet.find(nickname)
+    platform_cell = worksheet.find('switch')
+    row = cell.row
+    column = platform_cell.col
+    switch = worksheet.cell(row,column).value
     await ctx.send(switch)
 
 @bot.command(name='xbox', help='Get your Xbox Usernames here')
 async def xbox(ctx, arg1):
-    with open('coolerlounge.json') as f:
-        data = json.load(f)
-    with open('nickname.json') as f:
-        nicknames = json.load(f)
-    if arg1 == "all":
-        xbox = ""
-        for i in data:
-                name = data[i]["Nickname"]
-                code = data[i]['XBL']
-                if code != "":
-                    newentry = name + " : " + code + "\n"
-                    xbox += newentry
-                else:
-                    pass 
-    else:    
-        try:
-            name = nicknames[arg1]
-            USERID=name.get('DiscordID')
-            xbox = data[USERID]['XBL']
-            if xbox == "":
-                xbox = "The user you chose does not have a friend code in the system"
-        except KeyError:
-            xbox = "This user does not seem to exist or you got the nickname wrong"
-    await ctx.send(xbox)
+    nickname = arg1.lower()
+    cell = worksheet.find(nickname)
+    platform_cell = worksheet.find('xbox')
+    row = cell.row
+    column = platform_cell.col
+    xbl = worksheet.cell(row,column).value
+    await ctx.send(xbl)
 
 @bot.command(name='Playstation', help='Get your PSN names here')
 async def playstation(ctx, arg1):
-    with open('coolerlounge.json') as f:
-        data = json.load(f)
-    with open('nickname.json') as f:
-        nicknames = json.load(f)
-    if arg1 == "all":
-        playstation = ""
-        for i in data:
-                name = data[i]["Nickname"]
-                code = data[i]['PSN']
-                if code != "":
-                    newentry = name + " : " + code + "\n"
-                    playstation += newentry
-                else:
-                    pass 
-    else:    
-        try:
-            name = nicknames[arg1]
-            USERID=name.get('DiscordID')
-            playstation = data[USERID]['PSN']
-            if playstation == "":
-                playstation = "The user you chose does not have a friend code in the system"
-        except KeyError:
-            playstation = "This user does not seem to exist or you got the nickname wrong"
-    await ctx.send(playstation)
+    nickname = arg1.lower()
+    cell = worksheet.find(nickname)
+    platform_cell = worksheet.find('playstation')
+    row = cell.row
+    column = platform_cell.col
+    PSN = worksheet.cell(row,column).value
+    await ctx.send(PSN)
 
 @bot.command(name='AltOne', help='Get Pogo Alt codes here')
 async def firstAlt(ctx, arg1):
-    with open('coolerlounge.json') as f:
-        data = json.load(f)
-    with open('nickname.json') as f:
-        nicknames = json.load(f)
-    try:
-        name = nicknames[arg1]
-        USERID=name.get('DiscordID')
-        Alt = data[USERID]['PogoAlt']
-        if Alt == "":
-            Alt = "The user you chose does not have a friend code in the system"
-    except KeyError:
-        Alt = "This user does not seem to exist or you got the nickname wrong"
-    await ctx.send(Alt)
+    nickname = arg1.lower()
+    cell = worksheet.find(nickname)
+    platform_cell = worksheet.find('alt1')
+    row = cell.row
+    column = platform_cell.col
+    friend_code = worksheet.cell(row,column).value
+    await ctx.send(friend_code)
 
 @bot.command(name='AltTwo', help='Get Secondary Alt codes here')
 async def SecondAlt(ctx, arg1):
-    with open('coolerlounge.json') as f:
-        data = json.load(f)
-    with open('nickname.json') as f:
-        nicknames = json.load(f)
-    try:
-        name = nicknames[arg1]
-        USERID=name.get('DiscordID')
-        Alt = data[USERID]['PogoAlt2']
-        if Alt == "":
-            Alt = "The user you chose does not have a friend code in the system"
-    except KeyError:
-        Alt = "This user does not seem to exist or you got the nickname wrong"
-    await ctx.send(Alt)
+    nickname = arg1.lower()
+    cell = worksheet.find(nickname)
+    platform_cell = worksheet.find('alt2')
+    row = cell.row
+    column = platform_cell.col
+    friend_code = worksheet.cell(row,column).value
+    await ctx.send(friend_code)
 
-@bot.command(name='AltThree', help='Get your Xbox Usernames here')
+@bot.command(name='AltThree', help='Get your Third Alt Codes here')
 async def ThirdAlt(ctx, arg1):
-    with open('coolerlounge.json') as f:
-        data = json.load(f)
-    with open('nickname.json') as f:
-        nicknames = json.load(f)
-    try:
-        name = nicknames[arg1]
-        USERID=name.get('DiscordID')
-        Alt = data[USERID]['PogoAlt3']
-        if Alt == "":
-            Alt = "The user you chose does not have a friend code in the system"
-    except KeyError:
-        Alt = "This user does not seem to exist or you got the nickname wrong"
-    await ctx.send(Alt)
+    nickname = arg1.lower()
+    cell = worksheet.find(nickname)
+    platform_cell = worksheet.find('alt3')
+    row = cell.row
+    column = platform_cell.col
+    friend_code = worksheet.cell(row,column).value
+    await ctx.send(friend_code)
 
 @bot.command(name='notsafe', help="reminds people to keept talk appropriate-ish")
 @is_in_guild(home_server_id)
 async def safe(ctx):
-
     await ctx.send("Let's take adult content elsewhere, like #freeza_lounge or DM's")
 
 @bot.command(name='set', help='Enter switch, xbox, pogo, alt1, alt2, alt3, or playstation followed by your info')
@@ -210,59 +136,25 @@ async def set(ctx, arg1, arg2):
     ID=ctx.author.id
     USERID=str(ID)
     platform = arg1.lower()
-    with open('coolerlounge.json') as f:
-        data = json.load(f)
-    if platform == 'switch':   
-        data[USERID]['Switch'] = arg2
-        info = 'Your Switch friendcode has been updated this is the new value ' + arg2
-    elif platform == 'xbox':
-        data[USERID]['XBL'] = arg2
-        info = 'Your XBL profile has been updated this is the new value ' + arg2
-    elif platform == 'pogo':
-        data[USERID]['Pogo'] = arg2
-        info = 'Pogo Info updated this is the new value ' + arg2
-    elif platform == 'alt1':
-        data[USERID]['PogoAlt'] = arg2
-        info = 'Pogo Alt updated this is the new value ' + arg2
-    elif platform == 'alt2':
-        data[USERID]['PogoAlt2'] = arg2
-        info = 'Your second Pogo Alt has been updated this is the new value ' + arg2
-    elif arg1 == 'alt3':
-        data[USERID]['PogoAlt3'] = arg2
-        info = 'Your third pogo alt has been updated this is the new value ' + arg2
-    elif arg1 == 'playstation':
-        data[USERID]['PSN'] = arg2
-        info = 'Your Playstation has been updated this is the new value ' + arg2
-    else: 
-        info = "We currently don't support that"
-    with open('coolerlounge.json', 'w') as f:
-        json.dump(data, f)
+    cell = worksheet.find(USERID)
+    row_number = cell.row
+    if platform not in worksheet.row_values(1):
+        info = "Currently this platform is not supported. Please check for spelling errors or use the help command to find your error."
+    elif platform == 'nickname':
+        nickname_cell = worksheet.find('nickname')
+        nickname_lower_case = worksheet.find('nickname_lower')
+        col_number = nickname_cell.col
+        second_column = nickname_lower_case.col
+        lower_case_name = arg2.lower()
+        worksheet.update_cell(row_number,col_number,arg2)
+        worksheet.update_cell(row_number,second_column,lower_case_name)
+        info = 'Your {} information has been updated {} is the new value.'.format(platform,arg2)
+    else:
+        platform_cell = worksheet.find(platform)
+        col_number = platform_cell.col
+        worksheet.update_cell(row_number,col_number,arg2)
+        info = 'Your {} information has been updated {} is the new value.'.format(platform,arg2)
     await ctx.send(info)
-
-
-
-
-@bot.command(name='json', help='creates a jsonfile from the last backup')
-@commands.is_owner()
-async def jsoncreator(ctx):
-    file = 'data.csv'
-    jsonfile='coolerlounge.json'
-    data={}
-    with open(file) as csvFile:
-        rd = csv.DictReader(csvFile)
-        for rows in rd:
-            id = rows['DiscordID']
-            data[id] = rows
-    with open(jsonfile, 'w') as jsonFile:
-        jsonFile.write(json.dumps(data,indent=4))
-    successmessage="update successful"    
-    await ctx.send(successmessage)
-
-@bot.command(name='csv', help='backs up the current json to csv for backup')
-@commands.is_owner()
-async def csvmaker(ctx):
-    hi = "Hello Wolf"
-    await ctx.send(hi)
 
 @bot.command(name='friendship', help='Make two things best friends')
 async def args(ctx, arg1, arg2):
@@ -292,11 +184,13 @@ async def Delibird(ctx):
 
 @bot.command(name='hello', help='Get a friendly greeting')
 async def hello(ctx):
-    with open('coolerlounge.json') as f:
-        data = json.load(f)
     ID=ctx.author.id
     USERID=str(ID)
-    name=data[USERID]["Nickname"]
+    cell = worksheet.find(nickname)
+    row_cell = worksheet.find(USERID)
+    row = row_cell.row
+    column = cell.column
+    name = worksheet.cell(row,column).value
     await ctx.send("hello "+ name)
 
 @bot.command(pass_context=True, name='fight', help="show you're available to battle")
