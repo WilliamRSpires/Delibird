@@ -33,7 +33,10 @@ def find_code(name,platform):
     column_cell = worksheet.find(platform)
     row = row_cell.row
     column = column_cell.col
-    return worksheet.cell(row,column).value
+    if worksheet.cell(row,column).value is "":
+        return "This user does not have a code in the system"
+    else: 
+        return worksheet.cell(row,column).value
 
 @bot.event
 async def on_ready():
