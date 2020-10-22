@@ -22,21 +22,47 @@ gc = gspread.service_account(filename='google_sheets_creds.json')
 sh = gc.open_by_key(google_sheets)
 worksheet = sh.sheet1
 nickname_lower_list = worksheet.col_values(3)[1:]
+nickname_list = worksheet.col_values(2)[1:]
+
 def is_in_guild(guild_id):
     async def predicate(ctx):
         return ctx.guild.id == guild_id
     return commands.check(predicate)
 # https://stackoverflow.com/questions/51234778/what-are-the-differences-between-bot-and-client
 
+def all_results(platform):
+    platform_column = worksheet.find(platform)
+    column = platform_column.col
+    friend_code = ""
+    for idx, name in enumerate(nickname_list):
+        code_list = worksheet.col_values(column)
+        if code_list[idx+1] == "blank":
+            pass
+        else:
+            code = code_list[idx+1]
+            friend_code += name + " : " + code + "\n" 
+    if friend_code == "":
+        return "No one has their information in the system"
+    else:
+        return friend_code
+
+def nicknamecheck(name):
+    return bool(name.lower() in nickname_lower_list)
+
 def find_code(name,platform):
-    row_cell = worksheet.find(name)
-    column_cell = worksheet.find(platform)
-    row = row_cell.row
-    column = column_cell.col
-    if worksheet.cell(row,column).value is "":
-        return "This user does not have a code in the system"
-    else: 
-        return worksheet.cell(row,column).value
+    if name == "all":
+        return all_results(platform)
+    if nicknamecheck(name):
+        row_cell = worksheet.find(name)
+        column_cell = worksheet.find(platform)
+        row = row_cell.row
+        column = column_cell.col
+        if worksheet.cell(row,column).value is "blank":
+            return "This user does not have a code in the system"
+        else: 
+            return worksheet.cell(row,column).value
+    else:
+        return "This user does not seem to be in the system. Try '!nicknames' to get a list of users"
    
 @bot.event
 async def on_ready():
@@ -55,6 +81,8 @@ async def newprofile(ctx,arg1):
     lowercase_user = arg1.lower()
     if id_string in id_list:
        message = "You're already in the database. Please try a different command"
+    elif nicknamecheck(arg1):
+        message = "That nickname is already in the system please try a different name"
     else:     
         user = [id_string, arg1, lowercase_user]
         worksheet.append_row(user)
@@ -68,58 +96,37 @@ async def nicknames(ctx):
 
 @bot.command(name='pogo', help='gives pogo friend codes in a copypaste friendly format')
 async def pogo(ctx, arg1):
-    if arg1.lower() in nickname_lower_list:
-        friend_code = find_code(arg1.lower(),'pogo')
-    else: 
-        friend_code = "This user does not seem to be in the system. Try '!nicknames' to get a list of users"
+    friend_code=find_code(arg1.lower(),'pogo')
     await ctx.send(friend_code)
 
 @bot.command(name='switch', help='Get your switch codes here')
 async def switch(ctx, arg1):
-    if arg1.lower() in nickname_lower_list:
-        switch = find_code(arg1.lower(),'switch')
-    else: 
-        switch = "This user does not seem to be in the system. Try '!nicknames' to get a list of users" 
+    switch = find_code(arg1.lower(),'switch')
     await ctx.send(switch)
 
 @bot.command(name='xbox', help='Get your Xbox Usernames here')
 async def xbox(ctx, arg1):
-    if arg1.lower() in nickname_lower_list:
-        xbl = find_code(arg1.lower(),'xbox')
-    else: 
-        xbl = "This user does not seem to be in the system. Try '!nicknames' to get a list of users"   
+    xbl = find_code(arg1.lower(),'xbox')
     await ctx.send(xbl)
 
 @bot.command(name='playstation', help='Get your PSN names here')
 async def playstation(ctx, arg1):
-    if arg1.lower() in nickname_lower_list:
-        PSN = find_code(arg1.lower(),'playstation')
-    else: 
-        PSN = "This user does not seem to be in the system. Try '!nicknames' to get a list of users"   
+    PSN = find_code(arg1.lower(),'playstation')   
     await ctx.send(PSN)
 
 @bot.command(name='AltOne', help='Get Pogo Alt codes here')
 async def firstAlt(ctx, arg1):
-    if arg1.lower() in nickname_lower_list:
-        friend_code = find_code(arg1.lower(),'alt1')
-    else: 
-        friend_code = "This user does not seem to be in the system. Try '!nicknames' to get a list of users" 
+    friend_code = find_code(arg1.lower(),'alt1')
     await ctx.send(friend_code)
 
 @bot.command(name='AltTwo', help='Get Secondary Alt codes here')
 async def SecondAlt(ctx, arg1):
-    if arg1.lower() in nickname_lower_list:
-        friend_code = find_code(arg1.lower(),'alt2')
-    else: 
-        friend_code = "This user does not seem to be in the system. Try '!nicknames' to get a list of users"  
+    friend_code = find_code(arg1.lower(),'alt2')
     await ctx.send(friend_code)
 
 @bot.command(name='AltThree', help='Get your Third Alt Codes here')
 async def ThirdAlt(ctx, arg1):
-    if arg1.lower() in nickname_lower_list:
-        friend_code = find_code(arg1.lower(),'alt3') 
-    else: 
-        friend_code = "This user does not seem to be in the system. Try '!nicknames' to get a list of users" 
+    friend_code = find_code(arg1.lower(),'alt3') 
     await ctx.send(friend_code)
 
 @bot.command(name='notsafe', help="reminds people to keept talk appropriate-ish")
